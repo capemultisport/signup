@@ -113,18 +113,18 @@
   const mode = (params.get('mode') || 'renew').toLowerCase();
 
   // --- Price sets ---
-  const priceSets = {
+    const priceSets = {
     renew: [
-      { id: 'prod-a', label: 'Membership Renewal - Standard', price: 450.00 },
-      { id: 'prod-b', label: 'Membership Renewal - Premium', price: 650.00 },
-      { id: 'prod-c', label: 'Club Socks', price: 120.00 },
-      { id: 'prod-d', label: 'Club Cap', price: 180.00 }
+      { id: 'prod-a', label: 'Full member', price: 360 },
+      { id: 'prod-b', label: 'Family, Junior, Pensioner', price: 245 },
+      { id: 'prod-c', label: 'Up-country', price: 180 },
+      { id: 'prod-d', label: 'ASA', price: 195 }
     ],
     new: [
-      { id: 'prod-a', label: 'New Membership - Standard', price: 500.00 },
-      { id: 'prod-b', label: 'New Membership - Premium', price: 700.00 },
-      { id: 'prod-c', label: 'Club Socks', price: 120.00 },
-      { id: 'prod-d', label: 'Club Cap', price: 180.00 }
+      { id: 'prod-a', label: 'Full member', price: 460 },
+      { id: 'prod-b', label: 'Family, Junior, Pensioner', price: 295 },
+      { id: 'prod-c', label: 'Up-country', price: 230 },
+      { id: 'prod-d', label: 'ASA', price: 195 }
     ]
   };
 
