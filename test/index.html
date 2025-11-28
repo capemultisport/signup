@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Product Selection</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --text: #0f172a;
+    --muted: #475569;
+    --primary: #0ea5e9;
+    --primary-dark: #0284c7;
+    --border: #e2e8f0;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  header { margin-bottom: 16px; }
+  h1 { font-size: 1.5rem; margin-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 0.95rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 6px rgba(2, 6, 23, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card-title { font-weight: 600; font-size: 1rem; }
+  .price { color: var(--muted); font-size: 0.95rem; }
+  .control { display: flex; justify-content: space-between; align-items: center; }
+  .qty {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    min-width: 80px;
+    background: #fff;
+  }
+
+  .summary {
+    margin-top: 16px;
+    background: #ecfeff;
+    border: 1px solid #cffafe;
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .total { font-weight: 700; font-size: 1.1rem; }
+  .actions { display: flex; gap: 10px; }
+  button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: #f1f5f9; color: var(--text); border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1 id="page-title">Select Your Products</h1>
+      <p class="sub" id="mode-info"></p>
+    </header>
+
+    <section id="items-container" class="grid" aria-label="Product list"></section>
+
+    <section class="summary" aria-live="polite">
+      <div class="total" id="total">Total: R0.00</div>
+      <div class="actions">
+        <button class="btn-secondary" type="button" id="resetBtn">Reset</button>
+        <button class="btn-primary" type="button" onclick="proceedToPayment()">Proceed to Payment</button>
+      </div>
+    </section>
+  </main>
+
+<script>
+  // --- Mode detection ---
+  const params = new URLSearchParams(window.location.search);
+  const mode = (params.get('mode') || 'renew').toLowerCase();
+
+  // --- Price sets ---
+  const priceSets = {
+    renew: [
+      { id: 'prod-a', label: 'Membership Renewal - Standard', price: 450.00 },
+      { id: 'prod-b', label: 'Membership Renewal - Premium', price: 650.00 },
+      { id: 'prod-c', label: 'Club Socks', price: 120.00 },
+      { id: 'prod-d', label: 'Club Cap', price: 180.00 }
+    ],
+    new: [
+      { id: 'prod-a', label: 'New Membership - Standard', price: 500.00 },
+      { id: 'prod-b', label: 'New Membership - Premium', price: 700.00 },
+      { id: 'prod-c', label: 'Club Socks', price: 120.00 },
+      { id: 'prod-d', label: 'Club Cap', price: 180.00 }
+    ]
+  };
+
+  const activeItems = priceSets[mode] || priceSets.renew;
+  const reference = (mode === 'renew') ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
+
+  // --- Letters for products (easy to change) ---
+  const productLetters = ['A', 'B', 'C', 'D'];
+
+  // --- Update header ---
+  document.getElementById('mode-info').textContent = (mode === 'renew') ? 'Renewal Pricing' : 'New Membership Pricing';
+
+  const container = document.getElementById('items-container');
+
+  // Render items
+  activeItems.forEach((item, index) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-title">${item.label}</div>
+      <div class="price">Price: R${item.price.toFixed(2)}</div>
+      <div class="control">
+        <label for="qty-${index}">Quantity</label>
+        <select class="qty" id="qty-${index}">
+          <option value="0" selected>0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+    `;
+    container.appendChild(card);
+    document.getElementById(`qty-${index}`).addEventListener('change', updateTotal);
+  });
+
+  function calculateTotal() {
+    let total = 0;
+    activeItems.forEach((item, index) => {
+      const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
+      total += item.price * qty;
+    });
+    return total;
+  }
+
+  function updateTotal() {
+    const total = calculateTotal();
+    document.getElementById('total').textContent = `Total: R${total.toFixed(2)}`;
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    activeItems.forEach((_, index) => {
+      document.getElementById(`qty-${index}`).value = '0';
+    });
+    updateTotal();
+  });
+
+  // --- Proceed to Payment with appended selection summary ---
+  function proceedToPayment() {
+    const total = calculateTotal();
+    if (total <= 0) {
+      alert('Please choose at least one product.');
+      return;
+    }
+
+    // Build selection summary: e.g., A1B0C2D3
+    let selectionSummary = '';
+    activeItems.forEach((item, index) => {
+      const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
+      selectionSummary += `${productLetters[index]}${qty}`;
+    });
+
+    const fullReference = `${reference}-${selectionSummary}`;
+    const baseUrl = 'https://pay.yoco.com/cape-multisport-club';
+    const amount = total.toFixed(2);
+    const url = `${baseUrl}?amount=${encodeURIComponent(amount)}&reference=${encodeURIComponent(fullReference)}`;
+
+    window.location.assign(url);
+  }
+
+  updateTotal();
+</script>
+</body>
+</html>
