@@ -115,13 +115,13 @@
   // --- Price sets ---
     const priceSets = {
     renew: [
-      { id: 'prod-a', label: 'Full member', price: 360 },
+      { id: 'prod-a', label: 'Primary member', price: 360 },
       { id: 'prod-b', label: 'Family, Junior, Pensioner', price: 245 },
       { id: 'prod-c', label: 'Up-country', price: 180 },
       { id: 'prod-d', label: 'ASA', price: 195 }
     ],
     new: [
-      { id: 'prod-a', label: 'Full member', price: 460 },
+      { id: 'prod-a', label: 'Primary member', price: 460 },
       { id: 'prod-b', label: 'Family, Junior, Pensioner', price: 295 },
       { id: 'prod-c', label: 'Up-country', price: 230 },
       { id: 'prod-d', label: 'ASA', price: 195 }
@@ -132,7 +132,7 @@
   const reference = (mode === 'renew') ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
 
   // --- Letters for products (easy to change) ---
-  const productLetters = ['A', 'B', 'C', 'D'];
+  const productLetters = ['P', 'F', 'U', 'A'];
 
   // --- Update header ---
   document.getElementById('mode-info').textContent = (mode === 'renew') ? 'Renewal Pricing' : 'New Membership Pricing';
