@@ -3,7 +3,7 @@
   "modes": {
     "renew": {
       "products": [
-        { "id": "lic-ren-std", "label": "Membership Renewal - Standard", "price": 450.00, "discountable": true, "letter": "P" },
+        { "id": "lic-ren-std", "label": "Membership Renewal - Standard", "price": 450.00, "discountable": true, "letter": "A" },
         { "id": "lic-ren-prem", "label": "Membership Renewal - Premium", "price": 650.00, "discountable": true, "letter": "B" },
         { "id": "kit-socks", "label": "Club Socks", "price": 120.00, "discountable": false, "letter": "C" },
         { "id": "kit-cap", "label": "Club Cap", "price": 180.00, "discountable": false, "letter": "D" }
