@@ -25,14 +25,14 @@
       "type": "percent",
       "value": 50,
       "productId": "lic-ren-std",
-      "limit": "1"            
+      "limit": "1"
     },
     {
       "code": "CAP100",
       "type": "amount",
       "value": 100,
       "productId": "kit-cap",
-      "limit": "all"           
+      "limit": "all"
     }
   ]
 }
