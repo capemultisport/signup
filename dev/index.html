@@ -55,7 +55,7 @@
 <script>
   const params = new URLSearchParams(window.location.search);
   const mode = (params.get('mode') || 'renew').toLowerCase();
-  const CONFIG_URL = (location.pathname.includes('test')) ? '../config.json' : './config.json';
+   const CONFIG_URL = './config.json';
 
   let products = [];
   let vouchers = [];
