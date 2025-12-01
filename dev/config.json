@@ -1,37 +1,57 @@
-
 {
   "modes": {
     "renew": {
       "products": [
-        { "id": "lic-ren-std",  "label": "Membership Renewal - Standard", "price": 450.00, "letter": "A" },
-        { "id": "lic-ren-prem", "label": "Membership Renewal - Premium",  "price": 650.00, "letter": "B" },
-        { "id": "kit-socks",    "label": "Club Socks",                   "price": 120.00, "letter": "C" },
-        { "id": "kit-cap",      "label": "Club Cap",                     "price": 180.00, "letter": "D" }
+        { "id": "Ren-Sen",  "label": "Primary member", "price": 360, "letter": "P" },
+        { "id": "Ren-FamJunPen", "label": "Family, Junior, Pensioner",  "price": 245, "letter": "F" },
+        { "id": "Ren-UpC",    "label": "Up-country",                   "price": 180, "letter": "U" },
+        { "id": "ASA",      "label": "ASA",                     "price": 195, "letter": "A" }
       ]
     },
     "new": {
       "products": [
-        { "id": "lic-new-std",  "label": "New Membership - Standard",    "price": 500.00, "letter": "A" },
-        { "id": "lic-new-prem", "label": "New Membership - Premium",     "price": 700.00, "letter": "B" },
-        { "id": "kit-socks",    "label": "Club Socks",                   "price": 120.00, "letter": "C" },
-        { "id": "kit-cap",      "label": "Club Cap",                     "price": 180.00, "letter": "D" }
+        { "id": "Mem-Sen",  "label": "Primary member",    "price": 460, "letter": "P" },
+        { "id": "Mem-FamJunPen", "label": "Family, Junior, Pensioner",     "price": 295, "letter": "F" },
+        { "id": "Mem-UpC",    "label": "Up-country",                   "price": 230, "letter": "U" },
+        { "id": "ASA",      "label": "ASA",                     "price": 195, "letter": "A" }
       ]
     }
   },
 
   "vouchers": [
     {
-      "code": "BF50STD",
+      "code": "PackHost1",
       "type": "percent",
-      "value": 50,
-      "productId": "lic-ren-std",
+      "value": 10,
+      "productId": "Ren-Sen",
       "limit": "1"
     },
     {
-      "code": "CAP100",
+      "code": "PackHost2",
+      "type": "percent",
+      "value": 20,
+      "productId": "Ren-Sen",
+      "limit": "1"
+    },
+    {
+      "code": "PackHost3",
+      "type": "percent",
+      "value": 30,
+      "productId": "Ren-Sen",
+      "limit": "1"
+    },
+    {
+      "code": "PackHost4",
+      "type": "percent",
+      "value": 40,
+      "productId": "Ren-Sen",
+      "limit": "1"
+    },
+    {
+      "code": "PackHost5",
       "type": "amount",
-      "value": 100,
-      "productId": "kit-cap",
+      "value": 50,
+      "productId": "Ren-Sen",
       "limit": "all"
     }
   ]
