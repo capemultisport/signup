@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dynamic Products with Config</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width:640px){ .grid{ grid-template-columns:repeat(2,1fr);} }
+  @media (min-width:1024px){ .grid{ grid-template-columns:repeat(3,1fr);} }
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+  .card-title { font-weight:600; font-size:1rem; }
+  .price { color:#475569; font-size:0.95rem; }
+  .control { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
+  .qty { padding:8px; border:1px solid #e2e8f0; border-radius:8px; }
+  .summary { margin-top:16px; background:#ecfeff; border:1px solid #cffafe; padding:12px; border-radius:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .total { font-weight:700; font-size:1.1rem; }
+  .voucher { display:flex; gap:8px; align-items:center; flex:1 1 280px; }
+  .voucher input { flex:1; padding:10px; border:1px solid #e2e8f0; border-radius:8px; }
+  .msg { font-size:0.95rem; }
+  .msg.error { color:#ef4444; }
+  .msg.success { color:#10b981; }
+  button { padding:10px 16px; border-radius:10px; border:none; font-weight:600; font-size:1rem; cursor:pointer; }
+  .btn-primary { background:#0ea5e9; color:#fff; }
+  .btn-primary:hover { background:#0284c7; }
+  .btn-secondary { background:#f1f5f9; color:#0f172a; border:1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+  <h1>Select Your Products</h1>
+  <p id="mode-info">Loading...</p>
+
+  <section id="items-container" class="grid"></section>
+
+  <section class="summary">
+    <div id="selection">Selection: —</div>
+    <div id="discount-line" style="display:none;">Discount: —</div>
+    <div class="total" id="total">Total: R0.00</div>
+
+    <div class="voucher">
+      <label for="voucher">Voucher:</label>
+      <input type="text" id="voucher" placeholder="Enter code" />
+      <button class="btn-secondary" type="button" id="applyVoucherBtn">Apply</button>
+      <span class="msg" id="voucherMsg"></span>
+    </div>
+
+    <div class="actions">
+      <button class="btn-secondary" type="button" id="resetBtn">Reset</button>
+      <button class="btn-primary" type="button" id="payBtn">Proceed to Payment</button>
+    </div>
+  </section>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const mode = (params.get('mode') || 'renew').toLowerCase();
+  const CONFIG_URL = (location.pathname.includes('test')) ? '../config.json' : './config.json';
+
+  let products = [];
+  let vouchers = [];
+  let appliedVoucher = null;
+  const baseReference = mode === 'renew' ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
+
+  async function loadConfig() {
+    const res = await fetch(CONFIG_URL, { cache: 'no-store' });
+    const config = await res.json();
+    products = config.modes[mode]?.products || config.modes.renew.products;
+    vouchers = config.vouchers || [];
+    document.getElementById('mode-info').textContent = (mode === 'renew') ? 'Renewal Pricing' : 'New Membership Pricing';
+    renderProducts();
+    updateTotal();
+  }
+
+  function renderProducts() {
+    const container = document.getElementById('items-container');
+    container.innerHTML = '';
+    products.forEach((item, index) => {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-title">${item.label}</div>
+        <div class="price">Price: R${item.price.toFixed(2)}${item.discountable ? ' (discountable)' : ''}</div>
+        <div class="control">
+          <label for="qty-${index}">Quantity</label>
+          <select class="qty" id="qty-${index}">
+            <option value="0" selected>0</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          </select>
+        </div>
+      `;
+      container.appendChild(card);
+      document.getElementById(`qty-${index}`).addEventListener('change', updateTotal);
+    });
+  }
+
+  function buildSelectionSummary() {
+    let s = '';
+    products.forEach((item, index) => {
+      const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
+      s += `${item.letter || String.fromCharCode(65 + index)}${qty}`;
+    });
+    document.getElementById('selection').textContent = `Selection: ${s}`;
+    return s;
+  }
+
+  function calculateSubtotal() {
+    return products.reduce((sum, item, index) => {
+      const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
+      return sum + item.price * qty;
+    }, 0);
+  }
+
+  function eligibleSubtotal() {
+    return products.reduce((sum, item, index) => {
+      const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
+      return sum + (item.discountable ? item.price * qty : 0);
+    }, 0);
+  }
+
+  function updateTotal() {
+    buildSelectionSummary();
+    const sub = calculateSubtotal();
+    let discount = 0;
+    let discountText = '';
+    if (appliedVoucher) {
+      const eligible = eligibleSubtotal();
+      if (appliedVoucher.type === 'percent') {
+        discount = eligible * (appliedVoucher.value / 100);
+        discountText = `${appliedVoucher.value}% off eligible (R${eligible.toFixed(2)})`;
+      } else if (appliedVoucher.type === 'amount') {
+        discount = Math.min(appliedVoucher.value, eligible);
+        discountText = `R${appliedVoucher.value.toFixed(2)} off eligible (R${eligible.toFixed(2)})`;
+      }
+    }
+    const total = Math.max(0, sub - discount);
+    const discLine = document.getElementById('discount-line');
+    if (appliedVoucher) {
+      discLine.style.display = 'block';
+      discLine.textContent = `Discount: -R${discount.toFixed(2)} (${discountText})`;
+    } else {
+      discLine.style.display = 'none';
+    }
+    document.getElementById('total').textContent = `Total: R${total.toFixed(2)}`;
+  }
+
+  document.getElementById('applyVoucherBtn').addEventListener('click', () => {
+    const input = document.getElementById('voucher').value.trim();
+    const msg = document.getElementById('voucherMsg');
+    const v = vouchers.find(x => x.code.toLowerCase() === input.toLowerCase());
+    if (!v) {
+      msg.textContent = 'Invalid code.';
+      msg.className = 'msg error';
+      appliedVoucher = null;
+    } else {
+      appliedVoucher = v;
+      msg.textContent = `Code applied: ${v.code}`;
+      msg.className = 'msg success';
+    }
+    updateTotal();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    products.forEach((_, i) => document.getElementById(`qty-${i}`).value = '0');
+    appliedVoucher = null;
+    document.getElementById('voucher').value = '';
+    document.getElementById('voucherMsg').textContent = '';
+    updateTotal();
+  });
+
+  document.getElementById('payBtn').addEventListener('click', () => {
+    const total = calculateSubtotal();
+    if (total <= 0) {
+      alert('Please choose at least one product.');
+      return;
+    }
+    const selectionSummary = buildSelectionSummary();
+    const reference = `${baseReference}-${selectionSummary}${appliedVoucher ? '-V' + appliedVoucher.code : ''}`;
+    const amount = document.getElementById('total').textContent.replace('Total: R','');
+    const url = `https://pay.yoco.com/cape-multisport-club?amount=${encodeURIComponent(amount)}&reference=${encodeURIComponent(reference)}`;
+    window.location.assign(url);
+  });
+
+  loadConfig();
+</script>
+</body>
+</html>
