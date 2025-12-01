@@ -3,23 +3,37 @@
   "modes": {
     "renew": {
       "products": [
-        { "id": "lic-ren-std", "label": "Membership Renewal - Standard", "price": 450.00, "discountable": true, "letter": "A" },
-        { "id": "lic-ren-prem", "label": "Membership Renewal - Premium", "price": 650.00, "discountable": true, "letter": "B" },
-        { "id": "kit-socks", "label": "Club Socks", "price": 120.00, "discountable": false, "letter": "C" },
-        { "id": "kit-cap", "label": "Club Cap", "price": 180.00, "discountable": false, "letter": "D" }
+        { "id": "lic-ren-std",  "label": "Membership Renewal - Standard", "price": 450.00, "letter": "A" },
+        { "id": "lic-ren-prem", "label": "Membership Renewal - Premium",  "price": 650.00, "letter": "B" },
+        { "id": "kit-socks",    "label": "Club Socks",                   "price": 120.00, "letter": "C" },
+        { "id": "kit-cap",      "label": "Club Cap",                     "price": 180.00, "letter": "D" }
       ]
     },
     "new": {
       "products": [
-        { "id": "lic-new-std", "label": "New Membership - Standard", "price": 500.00, "discountable": true, "letter": "A" },
-        { "id": "lic-new-prem", "label": "New Membership - Premium", "price": 700.00, "discountable": true, "letter": "B" },
-        { "id": "kit-socks", "label": "Club Socks", "price": 120.00, "discountable": false, "letter": "C" },
-        { "id": "kit-cap", "label": "Club Cap", "price": 180.00, "discountable": false, "letter": "D" }
+        { "id": "lic-new-std",  "label": "New Membership - Standard",    "price": 500.00, "letter": "A" },
+        { "id": "lic-new-prem", "label": "New Membership - Premium",     "price": 700.00, "letter": "B" },
+        { "id": "kit-socks",    "label": "Club Socks",                   "price": 120.00, "letter": "C" },
+        { "id": "kit-cap",      "label": "Club Cap",                     "price": 180.00, "letter": "D" }
       ]
     }
   },
+
   "vouchers": [
-    { "code": "BF50", "type": "percent", "value": 50 },
-    { "code": "FIX100", "type": "amount", "value": 100 }
+    {
+      "code": "BF50STD",
+      "type": "percent",
+      "value": 50,
+      "productId": "lic-ren-std",
+      "limit": "1"             // options: "1" or "all"
+    },
+    {
+      "code": "CAP100",
+      "type": "amount",
+      "value": 100,
+      "productId": "kit-cap",
+      "limit": "all"           // discount every selected unit of kit-cap
+    }
   ]
 }
+
