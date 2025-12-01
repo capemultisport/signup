@@ -80,7 +80,7 @@
       card.className = 'card';
       card.innerHTML = `
         <div class="card-title">${item.label}</div>
-        <div class="price">Price: R${item.price.toFixed(2)}${item.discountable ? ' (discountable)' : ''}</div>
+        <div class="price">Price: R${item.price.toFixed(2)}</div>
         <div class="control">
           <label for="qty-${index}">Quantity</label>
           <select class="qty" id="qty-${index}">
