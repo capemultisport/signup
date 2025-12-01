@@ -1,13 +1,16 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dynamic Products with Config</title>
+<title>Dynamic Products with Product-Specific Vouchers</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; }
-  .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  h1 { margin: 0 0 8px; }
+  .sub { color:#475569; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
   @media (min-width:640px){ .grid{ grid-template-columns:repeat(2,1fr);} }
   @media (min-width:1024px){ .grid{ grid-template-columns:repeat(3,1fr);} }
   .card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
@@ -15,13 +18,16 @@
   .price { color:#475569; font-size:0.95rem; }
   .control { display:flex; justify-content:space-between; align-items:center; margin-top:8px; }
   .qty { padding:8px; border:1px solid #e2e8f0; border-radius:8px; }
-  .summary { margin-top:16px; background:#ecfeff; border:1px solid #cffafe; padding:12px; border-radius:10px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+  .summary { margin-top:16px; background:#ecfeff; border:1px solid #cffafe; padding:12px; border-radius:10px;
+             display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
   .total { font-weight:700; font-size:1.1rem; }
   .voucher { display:flex; gap:8px; align-items:center; flex:1 1 280px; }
   .voucher input { flex:1; padding:10px; border:1px solid #e2e8f0; border-radius:8px; }
   .msg { font-size:0.95rem; }
   .msg.error { color:#ef4444; }
   .msg.success { color:#10b981; }
+  .alert { margin:8px 0 16px; padding:12px; border-radius:8px; border:1px solid #fdba74; background:#fff7ed; color:#9a3412; display:none; }
+  .alert.show { display:block; }
   button { padding:10px 16px; border-radius:10px; border:none; font-weight:600; font-size:1rem; cursor:pointer; }
   .btn-primary { background:#0ea5e9; color:#fff; }
   .btn-primary:hover { background:#0284c7; }
@@ -30,9 +36,11 @@
 </head>
 <body>
   <h1>Select Your Products</h1>
-  <p id="mode-info">Loading...</p>
+  <p id="mode-info" class="sub">Loading…</p>
+  <div id="alert" class="alert" role="alert"></div>
 
-  <section id="items-container" class="grid"></section>
+  <section id="items-container" class="grid" aria-label="Product list"></section>
+  <div id="empty-state" style="display:none;color:#475569;">No products configured for this mode.</div>
 
   <section class="summary">
     <div id="selection">Selection: —</div>
@@ -55,21 +63,51 @@
 <script>
   const params = new URLSearchParams(window.location.search);
   const mode = (params.get('mode') || 'renew').toLowerCase();
-   const CONFIG_URL = './config.json';
+
+  // index.html and config.json are in the same folder:
+  const CONFIG_URL = './config.json';
 
   let products = [];
   let vouchers = [];
-  let appliedVoucher = null;
+  let appliedVoucher = null; // { code, type, value, productId, limit, productIndex, productLabel }
+
   const baseReference = mode === 'renew' ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
 
+  function showAlert(msg) {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
   async function loadConfig() {
-    const res = await fetch(CONFIG_URL, { cache: 'no-store' });
-    const config = await res.json();
-    products = config.modes[mode]?.products || config.modes.renew.products;
-    vouchers = config.vouchers || [];
-    document.getElementById('mode-info').textContent = (mode === 'renew') ? 'Renewal Pricing' : 'New Membership Pricing';
-    renderProducts();
-    updateTotal();
+    try {
+      const res = await fetch(CONFIG_URL, { cache: 'no-store' });
+      if (!res.ok) {
+        showAlert(`Failed to load config.json (${res.status}). Check path and publishing branch.`);
+        console.error('Fetch error:', res.status, res.statusText);
+        return;
+      }
+      let cfg;
+      try { cfg = await res.json(); }
+      catch (e) { showAlert('config.json is not valid JSON.'); console.error(e); return; }
+
+      if (!cfg.modes || !cfg.modes.renew) {
+        showAlert('config.json missing "modes" or "modes.renew".');
+        console.error('Bad config:', cfg);
+        return;
+      }
+      const modeCfg = cfg.modes[mode] || cfg.modes.renew;
+      products = Array.isArray(modeCfg.products) ? modeCfg.products : [];
+      vouchers = Array.isArray(cfg.vouchers) ? cfg.vouchers : [];
+      document.getElementById('mode-info').textContent =
+        (mode === 'renew') ? 'Renewal Pricing' : (cfg.modes[mode] ? 'New Membership Pricing' : 'Renewal Pricing (fallback)');
+      if (!products.length) { document.getElementById('empty-state').style.display = 'block'; }
+      renderProducts();
+      updateTotal();
+    } catch (err) {
+      showAlert('Unexpected error loading config. See console.');
+      console.error(err);
+    }
   }
 
   function renderProducts() {
@@ -78,12 +116,13 @@
     products.forEach((item, index) => {
       const card = document.createElement('article');
       card.className = 'card';
+      card.setAttribute('aria-labelledby', `${item.id}-title`);
       card.innerHTML = `
-        <div class="card-title">${item.label}</div>
-        <div class="price">Price: R${item.price.toFixed(2)}</div>
+        <div class="card-title" id="${item.id}-title">${item.label}</div>
+        <div class="price">Price: R${Number(item.price).toFixed(2)}</div>
         <div class="control">
           <label for="qty-${index}">Quantity</label>
-          <select class="qty" id="qty-${index}">
+          <select class="qty" id="qty-${index}" aria-label="Quantity for ${item.label}">
             <option value="0" selected>0</option>
             <option value="1">1</option><option value="2">2</option><option value="3">3</option>
           </select>
@@ -98,7 +137,8 @@
     let s = '';
     products.forEach((item, index) => {
       const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
-      s += `${item.letter || String.fromCharCode(65 + index)}${qty}`;
+      const letter = item.letter || String.fromCharCode(65 + index);
+      s += `${letter}${qty}`;
     });
     document.getElementById('selection').textContent = `Selection: ${s}`;
     return s;
@@ -107,59 +147,97 @@
   function calculateSubtotal() {
     return products.reduce((sum, item, index) => {
       const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
-      return sum + item.price * qty;
+      return sum + Number(item.price) * qty;
     }, 0);
   }
 
-  function eligibleSubtotal() {
-    return products.reduce((sum, item, index) => {
-      const qty = parseInt(document.getElementById(`qty-${index}`).value || '0', 10);
-      return sum + (item.discountable ? item.price * qty : 0);
-    }, 0);
+  function computeVoucherDiscount() {
+    if (!appliedVoucher) return { amount: 0, text: '' };
+
+    const { type, value, productIndex, limit, code, productLabel } = appliedVoucher;
+    if (productIndex == null || productIndex < 0) return { amount: 0, text: '' };
+
+    const item = products[productIndex];
+    if (!item) return { amount: 0, text: '' };
+
+    const qty = parseInt(document.getElementById(`qty-${productIndex}`).value || '0', 10);
+    const discountedUnits = (limit === 'all') ? qty : Math.min(1, qty);
+    if (discountedUnits <= 0) return { amount: 0, text: `Code ${code}: no units selected for ${productLabel}` };
+
+    let discount = 0;
+    let detail = '';
+
+    if (type === 'percent') {
+      discount = Number(item.price) * discountedUnits * (Number(value) / 100);
+      detail = `${value}% off ${productLabel} × ${discountedUnits}`;
+    } else if (type === 'amount') {
+      const perUnit = Math.min(Number(value), Number(item.price)); // don't over-discount
+      discount = perUnit * discountedUnits;
+      detail = `R${perUnit.toFixed(2)} off per unit of ${productLabel} × ${discountedUnits}`;
+    }
+
+    return { amount: discount, text: `Code ${code}: ${detail}` };
   }
 
   function updateTotal() {
     buildSelectionSummary();
     const sub = calculateSubtotal();
-    let discount = 0;
-    let discountText = '';
-    if (appliedVoucher) {
-      const eligible = eligibleSubtotal();
-      if (appliedVoucher.type === 'percent') {
-        discount = eligible * (appliedVoucher.value / 100);
-        discountText = `${appliedVoucher.value}% off eligible (R${eligible.toFixed(2)})`;
-      } else if (appliedVoucher.type === 'amount') {
-        discount = Math.min(appliedVoucher.value, eligible);
-        discountText = `R${appliedVoucher.value.toFixed(2)} off eligible (R${eligible.toFixed(2)})`;
-      }
-    }
+    const { amount: discount, text } = computeVoucherDiscount();
     const total = Math.max(0, sub - discount);
+
     const discLine = document.getElementById('discount-line');
-    if (appliedVoucher) {
+    if (appliedVoucher && discount > 0) {
       discLine.style.display = 'block';
-      discLine.textContent = `Discount: -R${discount.toFixed(2)} (${discountText})`;
+      discLine.textContent = `Discount: -R${discount.toFixed(2)} (${text})`;
+    } else if (appliedVoucher && discount === 0) {
+      discLine.style.display = 'block';
+      discLine.textContent = `Discount: — (${text})`;
     } else {
       discLine.style.display = 'none';
+      discLine.textContent = 'Discount: —';
     }
     document.getElementById('total').textContent = `Total: R${total.toFixed(2)}`;
   }
 
+  // Apply voucher
   document.getElementById('applyVoucherBtn').addEventListener('click', () => {
     const input = document.getElementById('voucher').value.trim();
     const msg = document.getElementById('voucherMsg');
-    const v = vouchers.find(x => x.code.toLowerCase() === input.toLowerCase());
+    const v = vouchers.find(x => String(x.code).toLowerCase() === input.toLowerCase());
     if (!v) {
       msg.textContent = 'Invalid code.';
       msg.className = 'msg error';
       appliedVoucher = null;
-    } else {
-      appliedVoucher = v;
-      msg.textContent = `Code applied: ${v.code}`;
-      msg.className = 'msg success';
+      updateTotal();
+      return;
     }
+
+    // Find target product in current mode
+    const idx = products.findIndex(p => p.id === v.productId);
+    if (idx === -1) {
+      msg.textContent = 'This code does not apply to any product in the current pricing mode.';
+      msg.className = 'msg error';
+      appliedVoucher = null;
+      updateTotal();
+      return;
+    }
+
+    appliedVoucher = {
+      code: v.code,
+      type: v.type,
+      value: Number(v.value),
+      productId: v.productId,
+      productIndex: idx,
+      productLabel: products[idx].label,
+      limit: (v.limit === 'all') ? 'all' : '1' // default to 1 if unspecified
+    };
+
+    msg.textContent = `Code applied: ${v.code} → ${products[idx].label} (${appliedVoucher.limit === 'all' ? 'all units' : '1 unit'})`;
+    msg.className = 'msg success';
     updateTotal();
   });
 
+  // Reset
   document.getElementById('resetBtn').addEventListener('click', () => {
     products.forEach((_, i) => document.getElementById(`qty-${i}`).value = '0');
     appliedVoucher = null;
@@ -168,9 +246,10 @@
     updateTotal();
   });
 
+  // Payment
   document.getElementById('payBtn').addEventListener('click', () => {
-    const total = calculateSubtotal();
-    if (total <= 0) {
+    const subtotal = calculateSubtotal();
+    if (subtotal <= 0) {
       alert('Please choose at least one product.');
       return;
     }
@@ -181,6 +260,7 @@
     window.location.assign(url);
   });
 
+  // Init
   loadConfig();
 </script>
 </body>
