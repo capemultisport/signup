@@ -49,10 +49,10 @@
     },
     {
       "code": "PackHost5",
-      "type": "amount",
+      "type": "percent",
       "value": 50,
       "productId": "Ren-Sen",
-      "limit": "all"
+      "limit": "1"
     }
   ]
 }
