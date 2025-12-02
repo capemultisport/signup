@@ -1,11 +1,12 @@
 //JSON checker : https://jsonlint.com/
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CMC renewal sales with discount voucher</title>
+<title>Dynamic Products with Product-Specific Vouchers</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; }
   h1 { margin: 0 0 8px; }
@@ -42,7 +43,7 @@
   <section id="items-container" class="grid" aria-label="Product list"></section>
   <div id="empty-state" style="display:none;color:#475569;">No products configured for this mode.</div>
 
-  <section class="summary">
+  <section class="summary" aria-live="polite">
     <div id="selection">Selection: —</div>
     <div id="discount-line" style="display:none;">Discount: —</div>
     <div class="total" id="total">Total: R0.00</div>
@@ -61,18 +62,21 @@
   </section>
 
 <script>
+  // --- Mode (renew/new) from URL ---
   const params = new URLSearchParams(window.location.search);
   const mode = (params.get('mode') || 'renew').toLowerCase();
 
   // index.html and config.json are in the same folder:
   const CONFIG_URL = './config.json';
 
+  // Data/state
   let products = [];
   let vouchers = [];
   let appliedVoucher = null; // { code, type, value, productId, limit, productIndex, productLabel }
 
   const baseReference = mode === 'renew' ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
 
+  // --- Helpers ---
   function showAlert(msg) {
     const el = document.getElementById('alert');
     el.textContent = msg;
@@ -96,11 +100,14 @@
         console.error('Bad config:', cfg);
         return;
       }
+
       const modeCfg = cfg.modes[mode] || cfg.modes.renew;
       products = Array.isArray(modeCfg.products) ? modeCfg.products : [];
       vouchers = Array.isArray(cfg.vouchers) ? cfg.vouchers : [];
+
       document.getElementById('mode-info').textContent =
         (mode === 'renew') ? 'Renewal Pricing' : (cfg.modes[mode] ? 'New Membership Pricing' : 'Renewal Pricing (fallback)');
+
       if (!products.length) { document.getElementById('empty-state').style.display = 'block'; }
       renderProducts();
       updateTotal();
@@ -151,6 +158,7 @@
     }, 0);
   }
 
+  // Compute discount for the currently applied voucher
   function computeVoucherDiscount() {
     if (!appliedVoucher) return { amount: 0, text: '' };
 
@@ -171,7 +179,7 @@
       discount = Number(item.price) * discountedUnits * (Number(value) / 100);
       detail = `${value}% off ${productLabel} × ${discountedUnits}`;
     } else if (type === 'amount') {
-      const perUnit = Math.min(Number(value), Number(item.price)); // don't over-discount
+      const perUnit = Math.min(Number(value), Number(item.price)); // cap to price
       discount = perUnit * discountedUnits;
       detail = `R${perUnit.toFixed(2)} off per unit of ${productLabel} × ${discountedUnits}`;
     }
@@ -199,17 +207,17 @@
     document.getElementById('total').textContent = `Total: R${total.toFixed(2)}`;
   }
 
-  // Apply voucher
-  document.getElementById('applyVoucherBtn').addEventListener('click', () => {
-    const input = document.getElementById('voucher').value.trim();
+  // --- Reusable voucher application function ---
+  function applyVoucher(codeInput) {
     const msg = document.getElementById('voucherMsg');
-    const v = vouchers.find(x => String(x.code).toLowerCase() === input.toLowerCase());
+    const v = vouchers.find(x => String(x.code).toLowerCase() === String(codeInput || '').toLowerCase());
+
     if (!v) {
       msg.textContent = 'Invalid code.';
       msg.className = 'msg error';
       appliedVoucher = null;
       updateTotal();
-      return;
+      return false;
     }
 
     // Find target product in current mode
@@ -219,7 +227,7 @@
       msg.className = 'msg error';
       appliedVoucher = null;
       updateTotal();
-      return;
+      return false;
     }
 
     appliedVoucher = {
@@ -235,9 +243,15 @@
     msg.textContent = `Code applied: ${v.code} → ${products[idx].label} (${appliedVoucher.limit === 'all' ? 'all units' : '1 unit'})`;
     msg.className = 'msg success';
     updateTotal();
+    return true;
+  }
+
+  // --- Events ---
+  document.getElementById('applyVoucherBtn').addEventListener('click', () => {
+    const input = document.getElementById('voucher').value.trim();
+    applyVoucher(input);
   });
 
-  // Reset
   document.getElementById('resetBtn').addEventListener('click', () => {
     products.forEach((_, i) => document.getElementById(`qty-${i}`).value = '0');
     appliedVoucher = null;
@@ -246,22 +260,33 @@
     updateTotal();
   });
 
-  // Payment
   document.getElementById('payBtn').addEventListener('click', () => {
+    // If user typed a voucher but didn't click Apply, try to apply it now
+    if (!appliedVoucher) {
+      const input = document.getElementById('voucher').value.trim();
+      if (input) applyVoucher(input);
+    }
+
     const subtotal = calculateSubtotal();
     if (subtotal <= 0) {
       alert('Please choose at least one product.');
       return;
     }
+
     const selectionSummary = buildSelectionSummary();
     const reference = `${baseReference}-${selectionSummary}${appliedVoucher ? '-V' + appliedVoucher.code : ''}`;
-    const amount = document.getElementById('total').textContent.replace('Total: R','');
-    const url = `https://pay.yoco.com/cape-multisport-club?amount=${encodeURIComponent(amount)}&reference=${encodeURIComponent(reference)}`;
+
+    const amountText = document.getElementById('total').textContent.replace('Total: R','');
+    const amount = Number(amountText).toFixed(2);
+
+    const baseUrl = 'https://pay.yoco.com/cape-multisport-club';
+    const url = `${baseUrl}?amount=${encodeURIComponent(amount)}&reference=${encodeURIComponent(reference)}`;
     window.location.assign(url);
   });
 
-  // Init
+  // --- Init ---
   loadConfig();
 </script>
 </body>
 </html>
+
