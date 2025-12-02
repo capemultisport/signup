@@ -274,7 +274,7 @@
     }
 
     const selectionSummary = buildSelectionSummary();
-    const reference = `${baseReference}-${selectionSummary}${appliedVoucher ? '-V' + appliedVoucher.code : ''}`;
+    const reference = `${baseReference}-${selectionSummary}${appliedVoucher ? '-' + appliedVoucher.code : ''}`;
 
     const amountText = document.getElementById('total').textContent.replace('Total: R','');
     const amount = Number(amountText).toFixed(2);
