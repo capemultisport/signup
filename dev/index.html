@@ -240,8 +240,8 @@
       limit: (v.limit === 'all') ? 'all' : '1' // default to 1 if unspecified
     };
 
-    msg.textContent = `Code applied: ${v.code} → ${products[idx].label} (${appliedVoucher.limit === 'all' ? 'all units' : '1 unit'})`;
-    msg.className = 'msg success';
+    //msg.textContent = `Code applied: ${v.code} → ${products[idx].label} (${appliedVoucher.limit === 'all' ? 'all units' : '1 unit'})`;
+    //msg.className = 'msg success';
     updateTotal();
     return true;
   }
