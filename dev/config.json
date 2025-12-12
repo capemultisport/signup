@@ -60,7 +60,14 @@
       "value": 50,
       "productId": "Ren-FamJunPen",
       "limit": "1"
-    }    
+    },
+    {
+      "code": "PackHost4Fam",
+      "type": "percent",
+      "value": 40,
+      "productId": "Ren-FamJunPen",
+      "limit": "1"
+    } 
   ]
 }
 
