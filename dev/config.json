@@ -53,7 +53,14 @@
       "value": 50,
       "productId": "Ren-Sen",
       "limit": "1"
-    }
+    },
+    {
+      "code": "PackHostMS",
+      "type": "percent",
+      "value": 50,
+      "productId": "Ren-FamJunPen",
+      "limit": "1"
+    }    
   ]
 }
 
