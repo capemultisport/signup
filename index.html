@@ -128,13 +128,13 @@
   };
 
   const activeItems = priceSets[mode] || priceSets.renew;
-  const reference = (mode === 'renew') ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
+  const reference = (mode === 'renew') ? 'Membership' : 'Membership';
 
   // --- Letters for products (easy to change) ---
   const productLetters = ['P', 'F', 'U', 'A'];
 
   // --- Update header ---
-  document.getElementById('mode-info').textContent = (mode === 'renew') ? 'Renewal Pricing' : 'New Membership Pricing';
+  document.getElementById('mode-info').textContent = (mode === 'renew') ? 'Membership Pricing' : 'Membership Pricing';
 
   const container = document.getElementById('items-container');
 
