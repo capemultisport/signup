@@ -106,7 +106,7 @@
       vouchers = Array.isArray(cfg.vouchers) ? cfg.vouchers : [];
 
       document.getElementById('mode-info').textContent =
-        (mode === 'renew') ? 'Membership Pricing' : (cfg.modes[mode] ? 'New Membership Pricing' : 'Membership Pricing (fallback)');
+        (mode === 'renew') ? 'Membership Pricing' : (cfg.modes[mode] ? 'Membership Pricing' : 'Membership Pricing');
 
       if (!products.length) { document.getElementById('empty-state').style.display = 'block'; }
       renderProducts();
