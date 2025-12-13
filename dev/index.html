@@ -6,7 +6,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CMC Renewal Payments (with dscount vouchers)</title>
+<title>CMC Membership Payments (with dscount vouchers)</title>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; background: #f8fafc; }
   h1 { margin: 0 0 8px; }
@@ -74,7 +74,7 @@
   let vouchers = [];
   let appliedVoucher = null; // { code, type, value, productId, limit, productIndex, productLabel }
 
-  const baseReference = mode === 'renew' ? 'MembershipBlackFriday' : 'NewMembershipBlackFriday';
+  const baseReference = mode === 'renew' ? 'Membership' : 'Membership';
 
   // --- Helpers ---
   function showAlert(msg) {
@@ -106,7 +106,7 @@
       vouchers = Array.isArray(cfg.vouchers) ? cfg.vouchers : [];
 
       document.getElementById('mode-info').textContent =
-        (mode === 'renew') ? 'Renewal Pricing' : (cfg.modes[mode] ? 'New Membership Pricing' : 'Renewal Pricing (fallback)');
+        (mode === 'renew') ? 'Membership Pricing' : (cfg.modes[mode] ? 'New Membership Pricing' : 'Membership Pricing (fallback)');
 
       if (!products.length) { document.getElementById('empty-state').style.display = 'block'; }
       renderProducts();
