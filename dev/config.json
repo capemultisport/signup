@@ -2,9 +2,9 @@
   "modes": {
     "renew": {
       "products": [
-        { "id": "Ren-Sen",  "label": "Primary member", "price": 360, "letter": "P" },
-        { "id": "Ren-FamJunPen", "label": "Family, Junior, Pensioner",  "price": 245, "letter": "F" },
-        { "id": "Ren-UpC",    "label": "Up-country",                   "price": 180, "letter": "U" },
+        { "id": "Ren-Sen",  "label": "Primary member", "price": 460, "letter": "P" },
+        { "id": "Ren-FamJunPen", "label": "Family, Junior, Pensioner",  "price": 295, "letter": "F" },
+        { "id": "Ren-UpC",    "label": "Up-country",                   "price": 230, "letter": "U" },
         { "id": "ASA",      "label": "ASA",                     "price": 195, "letter": "A" }
       ]
     },
